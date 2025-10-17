@@ -1,10 +1,12 @@
 package branch
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/abroudoux/got/internal/program"
 	"github.com/atotto/clipboard"
+	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/log"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -12,6 +14,8 @@ import (
 
 func (r *repository) execAction(branchSelected *branch, action action) error {
 	switch action {
+	case actionDelete:
+		// return r.delete(branchSelected)
 	case actionNewBranch:
 		return r.createNewBranch(branchSelected)
 	case actionCopyName:
@@ -38,39 +42,6 @@ func copyBranchName(branch *branch) error {
 	return nil
 }
 
-func (r *repository) createNewBranch(branch *branch) error {
-	if !r.isHead(branch) {
-		log.Warn("You need to create a branch from the HEAD, move on it first.")
-		return nil
-	}
-
-	for {
-		// newBranchName, err := program.ReadInput("Enter the name of the new branch: ", "feat/amazing-feature")
-		// if err != nil {
-		// 	return err
-		// }
-
-		newBranchName := "hello"
-
-		if r.isBranchNameAlreadyExists(newBranchName) {
-			warnMsg := fmt.Sprintf("%s is already used, please choose another name.", program.RenderElementSelected(newBranchName))
-			log.Warn(warnMsg)
-			continue
-		}
-
-		newBranch := plumbing.NewHashReference(plumbing.ReferenceName("refs/heads/"+newBranchName), r.head.Hash())
-		err := r.git.Storer.SetReference(newBranch)
-		if err != nil {
-			return nil
-		}
-
-		msgSuccessfullyCreated := fmt.Sprintf("New branch %s based on %s created.", program.RenderElementSelected(newBranchName), program.RenderElementSelected(r.head.Name().Short()))
-		log.Info(msgSuccessfullyCreated)
-
-		return nil
-	}
-}
-
 func (r *repository) checkout(branch *branch) error {
 	if r.isHead(branch) {
 		log.Warn("You're already on the selected branch, please choose another one.")
@@ -84,6 +55,7 @@ func (r *repository) checkout(branch *branch) error {
 
 	options := &git.CheckoutOptions{
 		Branch: plumbing.ReferenceName(branch.Name()),
+		Keep:   true,
 	}
 
 	err = worktree.Checkout(options)
@@ -93,6 +65,57 @@ func (r *repository) checkout(branch *branch) error {
 
 	msg := fmt.Sprintf("Successfully checked out branch %s.", program.RenderElementSelected(branch.Name().Short()))
 	log.Info(msg)
+
+	return nil
+}
+
+func (r *repository) createNewBranch(branch *branch) error {
+	if !r.isHead(branch) {
+		log.Warn("You need to create a branch from the HEAD, move on it first.")
+		return nil
+	}
+
+	var newBranchName string
+	var checkoutOnNewBranch bool
+
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().Title("Enter the name of the new branch:").Value(&newBranchName).Validate(
+				func(str string) error {
+					if r.isBranchNameAlreadyExists(str) {
+						return errors.New("Branch name already exists, please choose another name.")
+					}
+					return nil
+				}).Placeholder("feature/my-new-branch"),
+			huh.NewConfirm().Title("Do you want to checkout on?").Value(&checkoutOnNewBranch),
+		),
+	)
+
+	err := form.Run()
+	if err != nil {
+		return err
+	}
+
+	newBranch := plumbing.NewHashReference(plumbing.ReferenceName("refs/heads/"+newBranchName), r.head.Hash())
+	err = r.git.Storer.SetReference(newBranch)
+	if err != nil {
+		return nil
+	}
+
+	msgSuccessfullyCreated := fmt.Sprintf("New branch %s based on %s created.", program.RenderElementSelected(newBranchName), program.RenderElementSelected(r.head.Name().Short()))
+	log.Info(msgSuccessfullyCreated)
+
+	if checkoutOnNewBranch {
+		branchCreated := r.findBranchByName(newBranch.Name().Short())
+		if branchCreated == nil {
+			return fmt.Errorf("branch %s not found after creation", newBranch.Name().Short())
+		}
+
+		err := r.checkout(branchCreated)
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }

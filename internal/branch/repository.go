@@ -60,3 +60,15 @@ func (repository *repository) getBranches() ([]*branch, error) {
 
 	return branches, nil
 }
+
+func (r *repository) findBranchByName(name string) *branch {
+	r.branches, _ = r.getBranches()
+
+	for _, branch := range r.branches {
+		if branch.Name().Short() == name {
+			return branch
+		}
+	}
+
+	return nil
+}
