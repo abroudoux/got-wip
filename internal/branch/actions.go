@@ -15,7 +15,7 @@ import (
 func (r *repository) execAction(branchSelected *branch, action action) error {
 	switch action {
 	case actionDelete:
-		// return r.delete(branchSelected)
+		return r.delete(branchSelected)
 	case actionNewBranch:
 		return r.createNewBranch(branchSelected)
 	case actionCopyName:
@@ -116,6 +116,41 @@ func (r *repository) createNewBranch(branch *branch) error {
 			return err
 		}
 	}
+
+	return nil
+}
+
+func (r *repository) delete(branch *branch) error {
+	if r.isHead(branch) {
+		log.Warn("You cannot delete the branch you're currently on, please checkout on another branch first.")
+		return nil
+	}
+
+	var confirmDelete bool
+
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewConfirm().Title("Are you sure you want to delete " + branch.Name().Short() + "?").Value(&confirmDelete),
+		),
+	)
+
+	err := form.Run()
+	if err != nil {
+		return err
+	}
+
+	if !confirmDelete {
+		log.Info("Branch deletion cancelled.")
+		return nil
+	}
+
+	refName := plumbing.ReferenceName(branch.Name())
+	err = r.git.Storer.RemoveReference(refName)
+	if err != nil {
+		return err
+	}
+
+	log.Info(fmt.Sprintf("Branch %s deleted successfully.", program.RenderElementSelected(branch.Name().Short())))
 
 	return nil
 }
