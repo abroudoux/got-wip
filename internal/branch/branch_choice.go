@@ -8,8 +8,18 @@ import (
 	"github.com/charmbracelet/log"
 )
 
-func (r *repository) selectBranch() (*branch, error) {
-	p := tea.NewProgram(initialBranchChoiceModel(r.branches, r.head))
+func selectBranch(r *repository) (*branch, error) {
+	branches, err := getBranches(r)
+	if err != nil {
+		return nil, err
+	}
+
+	head, err := r.Head()
+	if err != nil {
+		return nil, err
+	}
+
+	p := tea.NewProgram(initialBranchChoiceModel(branches, head))
 	m, err := p.Run()
 	if err != nil {
 		return nil, err

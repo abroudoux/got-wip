@@ -1,11 +1,21 @@
 package branch
 
-func (r *repository) isHead(branch *branch) bool {
-	return r.head.Name().Short() == branch.Name().Short()
+func isHead(branch *branch, r *repository) bool {
+	head, err := getHead(r)
+	if err != nil {
+		return false
+	}
+
+	return head.Name().Short() == branch.Name().Short()
 }
 
-func (r *repository) isBranchNameAlreadyExists(branchName string) bool {
-	for _, b := range r.branches {
+func isBranchNameAlreadyExists(branchName string, r *repository) bool {
+	branches, err := getBranches(r)
+	if err != nil {
+		return false
+	}
+
+	for _, b := range branches {
 		if b.Name().Short() == branchName {
 			return true
 		}

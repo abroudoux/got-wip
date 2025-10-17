@@ -3,13 +3,13 @@ package branch
 import "github.com/charmbracelet/log"
 
 func Run() error {
-	repository, err := getCurrentGitRepository()
+	repository, err := getRepository()
 	if err != nil {
 		log.Errorf("Error while getting current git repository: %v", err)
 		return err
 	}
 
-	branch, err := repository.selectBranch()
+	branch, err := selectBranch(repository)
 	if branch == nil {
 		return nil
 	}
@@ -24,7 +24,7 @@ func Run() error {
 		return err
 	}
 
-	err = repository.execAction(branch, action)
+	err = execAction(branch, action, repository)
 	if err != nil {
 		log.Errorf("Error while executing action: %v", err)
 		return err

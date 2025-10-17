@@ -3,39 +3,37 @@ package branch
 import (
 	"github.com/charmbracelet/log"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 )
 
-func newRepository(gitRepository *gitRepository) *repository {
-	return &repository{
-		git: gitRepository,
-	}
-}
-
-func getCurrentGitRepository() (*repository, error) {
-	currentDir, err := git.PlainOpen(".")
+func getRepository() (*repository, error) {
+	gitRepository, err := git.PlainOpen(".")
 	if err != nil {
 		log.Warnf("Error opening git repository: %v", err)
 		return nil, err
 	}
 
-	var repository = newRepository(currentDir)
-	repository.head, err = repository.getHead()
-	if err != nil {
-		log.Warnf("Error getting HEAD: %v", err)
-		return nil, err
-	}
-
-	repository.branches, err = repository.getBranches()
-	if err != nil {
-		log.Warnf("Error getting branches: %v", err)
-		return nil, err
-	}
-
-	return repository, nil
+	return gitRepository, nil
 }
 
-func (r *repository) getHead() (*branch, error) {
-	head, err := r.git.Head()
+func getBranches(r *repository) ([]*branch, error) {
+	branchIter, err := r.Branches()
+	if err != nil {
+		return nil, err
+	}
+
+	var branches []*branch
+
+	err = branchIter.ForEach(func(ref *plumbing.Reference) error {
+		branches = append(branches, ref)
+		return nil
+	})
+
+	return branches, err
+}
+
+func getHead(r *repository) (*branch, error) {
+	head, err := r.Head()
 	if err != nil {
 		return nil, err
 	}
@@ -43,32 +41,17 @@ func (r *repository) getHead() (*branch, error) {
 	return head, nil
 }
 
-func (r *repository) getBranches() ([]*branch, error) {
-	branchIter, err := r.git.Branches()
+func findBranchByName(branchName string, r *repository) (*branch, error) {
+	branches, err := getBranches(r)
 	if err != nil {
 		return nil, err
 	}
 
-	var branches []*branch
-	err = branchIter.ForEach(func(ref *branch) error {
-		branches = append(branches, ref)
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return branches, nil
-}
-
-func (r *repository) findBranchByName(name string) *branch {
-	r.branches, _ = r.getBranches()
-
-	for _, branch := range r.branches {
-		if branch.Name().Short() == name {
-			return branch
+	for _, b := range branches {
+		if b.Name().Short() == branchName {
+			return b, nil
 		}
 	}
 
-	return nil
+	return nil, nil
 }

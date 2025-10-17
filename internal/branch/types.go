@@ -6,15 +6,7 @@ import (
 )
 
 type branch = plumbing.Reference
-type gitRepository = git.Repository
-type remote = git.Remote
-
-type repository struct {
-	git      *gitRepository
-	branches []*branch
-	head     *branch
-	remotes  []*remote
-}
+type repository = git.Repository
 
 type branchChoice struct {
 	head           *branch
