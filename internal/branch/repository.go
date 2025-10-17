@@ -34,8 +34,8 @@ func getCurrentGitRepository() (*repository, error) {
 	return repository, nil
 }
 
-func (repository *repository) getHead() (*branch, error) {
-	head, err := repository.git.Head()
+func (r *repository) getHead() (*branch, error) {
+	head, err := r.git.Head()
 	if err != nil {
 		return nil, err
 	}
@@ -43,8 +43,8 @@ func (repository *repository) getHead() (*branch, error) {
 	return head, nil
 }
 
-func (repository *repository) getBranches() ([]*branch, error) {
-	branchIter, err := repository.git.Branches()
+func (r *repository) getBranches() ([]*branch, error) {
+	branchIter, err := r.git.Branches()
 	if err != nil {
 		return nil, err
 	}
