@@ -22,6 +22,13 @@ func (r *repository) execAction(branchSelected *branch, action action) error {
 		return copyBranchName(branchSelected)
 	case actionCheckout:
 		return r.checkout(branchSelected)
+	case actionPull:
+		if !r.isHead(branchSelected) {
+			log.Warn("You need to pull the branch from the HEAD, move on it first.")
+			return nil
+		}
+
+		return r.pull()
 	default:
 		log.Info("Exiting..")
 		return nil
@@ -151,6 +158,28 @@ func (r *repository) delete(branch *branch) error {
 	}
 
 	log.Info(fmt.Sprintf("Branch %s deleted successfully.", program.RenderElementSelected(branch.Name().Short())))
+
+	return nil
+}
+
+func (r *repository) pull() error {
+	worktree, err := r.git.Worktree()
+	if err != nil {
+		return err
+	}
+
+	err = worktree.Pull(&git.PullOptions{
+		RemoteName: "origin",
+	})
+	if err == git.NoErrAlreadyUpToDate {
+		log.Info("Already up-to-date.")
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	log.Info("Branch pulled successfully.")
 
 	return nil
 }
