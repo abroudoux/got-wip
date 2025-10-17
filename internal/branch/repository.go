@@ -6,6 +6,19 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 )
 
+type branch = plumbing.Reference
+type gitRepository = git.Repository
+
+type repository struct {
+	gitRepository
+}
+
+func newRepository(gitRepository *gitRepository) *repository {
+	return &repository{
+		*gitRepository,
+	}
+}
+
 func getRepository() (*repository, error) {
 	gitRepository, err := git.PlainOpen(".")
 	if err != nil {
@@ -13,10 +26,10 @@ func getRepository() (*repository, error) {
 		return nil, err
 	}
 
-	return gitRepository, nil
+	return newRepository(gitRepository), nil
 }
 
-func getBranches(r *repository) ([]*branch, error) {
+func (r *repository) getBranches() ([]*branch, error) {
 	branchIter, err := r.Branches()
 	if err != nil {
 		return nil, err
@@ -24,7 +37,7 @@ func getBranches(r *repository) ([]*branch, error) {
 
 	var branches []*branch
 
-	err = branchIter.ForEach(func(ref *plumbing.Reference) error {
+	err = branchIter.ForEach(func(ref *branch) error {
 		branches = append(branches, ref)
 		return nil
 	})
@@ -32,17 +45,8 @@ func getBranches(r *repository) ([]*branch, error) {
 	return branches, err
 }
 
-func getHead(r *repository) (*branch, error) {
-	head, err := r.Head()
-	if err != nil {
-		return nil, err
-	}
-
-	return head, nil
-}
-
-func findBranchByName(branchName string, r *repository) (*branch, error) {
-	branches, err := getBranches(r)
+func (r *repository) findBranchByName(branchName string) (*branch, error) {
+	branches, err := r.getBranches()
 	if err != nil {
 		return nil, err
 	}
@@ -54,4 +58,28 @@ func findBranchByName(branchName string, r *repository) (*branch, error) {
 	}
 
 	return nil, nil
+}
+
+func (r *repository) isHead(branch *branch) bool {
+	head, err := r.Head()
+	if err != nil {
+		return false
+	}
+
+	return head.Name().Short() == branch.Name().Short()
+}
+
+func (r *repository) isBranchNameAlreadyExists(branchName string) bool {
+	branches, err := r.getBranches()
+	if err != nil {
+		return false
+	}
+
+	for _, b := range branches {
+		if b.Name().Short() == branchName {
+			return true
+		}
+	}
+
+	return false
 }

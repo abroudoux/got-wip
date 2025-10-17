@@ -18,6 +18,15 @@ func selectAction(branchSelected *branch) (action, error) {
 	return actionSelected, nil
 }
 
+type action int
+
+type actionChoice struct {
+	actions        []action
+	cursor         int
+	actionSelected action
+	branchSelected *branch
+}
+
 const (
 	actionExit action = iota
 	actionDelete

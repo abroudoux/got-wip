@@ -9,7 +9,7 @@ import (
 )
 
 func selectBranch(r *repository) (*branch, error) {
-	branches, err := getBranches(r)
+	branches, err := r.getBranches()
 	if err != nil {
 		return nil, err
 	}
@@ -27,6 +27,13 @@ func selectBranch(r *repository) (*branch, error) {
 
 	branchSelected := m.(branchChoice).branchSelected
 	return branchSelected, nil
+}
+
+type branchChoice struct {
+	head           *branch
+	branches       []*branch
+	cursor         int
+	branchSelected *branch
 }
 
 func initialBranchChoiceModel(branches []*branch, head *branch) branchChoice {

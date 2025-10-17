@@ -15,20 +15,20 @@ import (
 func execAction(branchSelected *branch, action action, r *repository) error {
 	switch action {
 	case actionDelete:
-		return delete(branchSelected, r)
+		return r.delete(branchSelected)
 	case actionNewBranch:
-		return createNewBranch(branchSelected, r)
+		return r.createNewBranch(branchSelected)
 	case actionCopyName:
 		return copyBranchName(branchSelected)
 	case actionCheckout:
-		return checkout(branchSelected, r)
+		return r.checkout(branchSelected)
 	case actionPull:
-		if !isHead(branchSelected, r) {
+		if !r.isHead(branchSelected) {
 			log.Warn("You need to pull the branch from the HEAD, move on it first.")
 			return nil
 		}
 
-		return pull(r)
+		return r.pull()
 	default:
 		log.Info("Exiting..")
 		return nil
@@ -49,8 +49,8 @@ func copyBranchName(branch *branch) error {
 	return nil
 }
 
-func checkout(branch *branch, r *repository) error {
-	if isHead(branch, r) {
+func (r *repository) checkout(branch *branch) error {
+	if r.isHead(branch) {
 		log.Warn("You're already on the selected branch, please choose another one.")
 		return nil
 	}
@@ -76,8 +76,8 @@ func checkout(branch *branch, r *repository) error {
 	return nil
 }
 
-func createNewBranch(branch *branch, r *repository) error {
-	if !isHead(branch, r) {
+func (r *repository) createNewBranch(branch *branch) error {
+	if !r.isHead(branch) {
 		log.Warn("You need to create a branch from the HEAD, move on it first.")
 		return nil
 	}
@@ -89,7 +89,7 @@ func createNewBranch(branch *branch, r *repository) error {
 		huh.NewGroup(
 			huh.NewInput().Title("Enter the name of the new branch:").Value(&newBranchName).Validate(
 				func(input string) error {
-					if isBranchNameAlreadyExists(input, r) {
+					if r.isBranchNameAlreadyExists(input) {
 						return errors.New("Branch name already exists, please choose another name.")
 					}
 					return nil
@@ -103,7 +103,7 @@ func createNewBranch(branch *branch, r *repository) error {
 		return err
 	}
 
-	head, err := getHead(r)
+	head, err := r.Head()
 	if err != nil {
 		return err
 	}
@@ -117,42 +117,33 @@ func createNewBranch(branch *branch, r *repository) error {
 	msgSuccessfullyCreated := fmt.Sprintf("New branch %s based on %s created.", program.RenderElementSelected(newBranchName), program.RenderElementSelected(head.Name().Short()))
 	log.Info(msgSuccessfullyCreated)
 
-	if checkoutOnNewBranch {
-		branchCreated, err := findBranchByName(newBranch.Name().Short(), r)
-		if err != nil {
-			return err
-		}
-		if branchCreated == nil {
-			return fmt.Errorf("branch %s not found after creation", newBranch.Name().Short())
-		}
+	if !checkoutOnNewBranch {
+		return nil
+	}
 
-		err = checkout(branchCreated, r)
-		if err != nil {
-			return err
-		}
+	branchCreated, err := r.findBranchByName(newBranch.Name().Short())
+	if err != nil {
+		return err
+	}
+	if branchCreated == nil {
+		return fmt.Errorf("branch %s not found after creation", newBranch.Name().Short())
+	}
+
+	err = r.checkout(branchCreated)
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func delete(branch *branch, r *repository) error {
-	if isHead(branch, r) {
+func (r *repository) delete(branch *branch) error {
+	if r.isHead(branch) {
 		log.Warn("You cannot delete the branch you're currently on, please checkout on another branch first.")
 		return nil
 	}
 
-	var confirmDelete bool
-
-	form := huh.NewForm(
-		huh.NewGroup(
-			huh.NewConfirm().Title("Are you sure you want to delete " + branch.Name().Short() + "?").Value(&confirmDelete),
-		),
-	)
-
-	err := form.Run()
-	if err != nil {
-		return err
-	}
+	confirmDelete := program.Confirm(fmt.Sprintf("Are you sure you want to delete the branch %s?", program.RenderElementSelected(branch.Name().Short())))
 
 	if !confirmDelete {
 		log.Info("Branch deletion cancelled.")
@@ -160,7 +151,7 @@ func delete(branch *branch, r *repository) error {
 	}
 
 	refName := plumbing.ReferenceName(branch.Name())
-	err = r.Storer.RemoveReference(refName)
+	err := r.Storer.RemoveReference(refName)
 	if err != nil {
 		return err
 	}
@@ -170,7 +161,7 @@ func delete(branch *branch, r *repository) error {
 	return nil
 }
 
-func pull(r *repository) error {
+func (r *repository) pull() error {
 	worktree, err := r.Worktree()
 	if err != nil {
 		return err
