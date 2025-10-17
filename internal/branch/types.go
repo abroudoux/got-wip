@@ -5,24 +5,27 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 )
 
-type Branch = plumbing.Reference
-type GitRepository = git.Repository
+type branch = plumbing.Reference
+type gitRepository = git.Repository
 
-type Repository struct {
-	git *GitRepository
-	branches []*Branch
-	head    *Branch
+type repository struct {
+	git      *gitRepository
+	branches []*branch
+	head     *branch
 }
 
-func NewRepository(gitRepository *GitRepository) *Repository {
-	return &Repository{
-		git: gitRepository,
-	}
+type branchChoice struct {
+	head           *branch
+	branches       []*branch
+	cursor         int
+	branchSelected *branch
 }
 
-type BranchChoice struct {
-	head *Branch
-	branches []*Branch
-	cursor int
-	branchSelected *Branch
+type action int
+
+type actionChoice struct {
+	actions        []action
+	cursor         int
+	actionSelected action
+	branchSelected *branch
 }

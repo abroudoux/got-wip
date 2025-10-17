@@ -5,14 +5,20 @@ import (
 	"github.com/go-git/go-git/v5"
 )
 
-func getCurrentGitRepository() (*Repository, error) {
+func newRepository(gitRepository *gitRepository) *repository {
+	return &repository{
+		git: gitRepository,
+	}
+}
+
+func getCurrentGitRepository() (*repository, error) {
 	currentDir, err := git.PlainOpen(".")
 	if err != nil {
 		log.Warnf("Error opening git repository: %v", err)
 		return nil, err
 	}
 
-	var repository = NewRepository(currentDir)
+	var repository = newRepository(currentDir)
 	repository.head, err = repository.getHead()
 	if err != nil {
 		log.Warnf("Error getting HEAD: %v", err)
@@ -28,7 +34,7 @@ func getCurrentGitRepository() (*Repository, error) {
 	return repository, nil
 }
 
-func (repository *Repository) getHead() (*Branch, error) {
+func (repository *repository) getHead() (*branch, error) {
 	head, err := repository.git.Head()
 	if err != nil {
 		return nil, err
@@ -37,14 +43,14 @@ func (repository *Repository) getHead() (*Branch, error) {
 	return head, nil
 }
 
-func (repository *Repository) getBranches() ([]*Branch, error) {
+func (repository *repository) getBranches() ([]*branch, error) {
 	branchIter, err := repository.git.Branches()
 	if err != nil {
 		return nil, err
 	}
 
-	var branches []*Branch
-	err = branchIter.ForEach(func(ref *Branch) error {
+	var branches []*branch
+	err = branchIter.ForEach(func(ref *branch) error {
 		branches = append(branches, ref)
 		return nil
 	})
