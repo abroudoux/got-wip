@@ -3,7 +3,7 @@ package branch
 import (
 	"fmt"
 
-	"github.com/abroudoux/got/internal/program"
+	"github.com/abroudoux/got/internal/ui"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -103,11 +103,11 @@ func (menu actionChoice) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (menu actionChoice) View() string {
 	s := "\033[H\033[2J\n"
-	s += fmt.Sprintf("Choose an action for the branch %s:\n\n", program.RenderElementSelected(string(menu.branchSelected.Name().Short())))
+	s += fmt.Sprintf("Choose an action for the branch %s:\n\n", ui.RenderElementSelected(string(menu.branchSelected.Name().Short())))
 
 	for i, action := range menu.actions {
-		cursor := program.RenderCursor(menu.cursor == i)
-		s += fmt.Sprintf("%s %s\n", cursor, program.RenderCurrentLine(action.String(), menu.cursor == i))
+		cursor := ui.RenderCursor(menu.cursor == i)
+		s += fmt.Sprintf("%s %s\n", cursor, ui.RenderCurrentLine(action.String(), menu.cursor == i))
 	}
 
 	s += "\n"

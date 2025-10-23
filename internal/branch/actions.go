@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/abroudoux/got/internal/program"
+	"github.com/abroudoux/got/internal/ui"
 	"github.com/atotto/clipboard"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/log"
@@ -27,7 +28,7 @@ func execAction(branchSelected *branch, action action, r *repository) error {
 	case actionPull:
 		return r.pull(branchSelected)
 	case actionRename:
-		return r.rename(branchSelected)
+		return rename(branchSelected)
 	default:
 		log.Info("Exiting..")
 		return nil
@@ -44,7 +45,7 @@ func copyBranchName(branch *branch) error {
 		return err
 	}
 
-	log.Info(fmt.Sprintf("Branch name %s copied to clipboard.", program.RenderElementSelected(branch.Name().Short())))
+	log.Info(fmt.Sprintf("Branch name %s copied to clipboard.", ui.RenderElementSelected(branch.Name().Short())))
 	return nil
 }
 
@@ -69,7 +70,7 @@ func (r *repository) checkout(branch *branch) error {
 		return err
 	}
 
-	msg := fmt.Sprintf("Successfully checked out branch %s.", program.RenderElementSelected(branch.Name().Short()))
+	msg := fmt.Sprintf("Successfully checked out branch %s.", ui.RenderElementSelected(branch.Name().Short()))
 	log.Info(msg)
 
 	return nil
@@ -113,7 +114,7 @@ func (r *repository) createNewBranch(branch *branch) error {
 		return nil
 	}
 
-	msgSuccessfullyCreated := fmt.Sprintf("New branch %s based on %s created.", program.RenderElementSelected(newBranchName), program.RenderElementSelected(head.Name().Short()))
+	msgSuccessfullyCreated := fmt.Sprintf("New branch %s based on %s created.", ui.RenderElementSelected(newBranchName), ui.RenderElementSelected(head.Name().Short()))
 	log.Info(msgSuccessfullyCreated)
 
 	if !checkoutOnNewBranch {
@@ -142,7 +143,7 @@ func (r *repository) delete(branch *branch) error {
 		return nil
 	}
 
-	confirmDelete := program.Confirm(fmt.Sprintf("Are you sure you want to delete the branch %s?", program.RenderElementSelected(branch.Name().Short())))
+	confirmDelete := program.Confirm(fmt.Sprintf("Are you sure you want to delete the branch %s?", ui.RenderElementSelected(branch.Name().Short())))
 
 	if !confirmDelete {
 		log.Info("Branch deletion cancelled.")
@@ -155,7 +156,7 @@ func (r *repository) delete(branch *branch) error {
 		return err
 	}
 
-	log.Info(fmt.Sprintf("Branch %s deleted successfully.", program.RenderElementSelected(branch.Name().Short())))
+	log.Info(fmt.Sprintf("Branch %s deleted successfully.", ui.RenderElementSelected(branch.Name().Short())))
 
 	return nil
 }
@@ -193,7 +194,7 @@ func (r *repository) merge(branch *branch) error {
 		return nil
 	}
 
-	confirmMerge := program.Confirm(fmt.Sprintf("Are you sure you want to merge the branch %s into the current branch?", program.RenderElementSelected(branch.Name().Short())))
+	confirmMerge := program.Confirm(fmt.Sprintf("Are you sure you want to merge the branch %s into the current branch?", ui.RenderElementSelected(branch.Name().Short())))
 
 	if !confirmMerge {
 		log.Info("Branch merge cancelled.")
@@ -208,7 +209,7 @@ func (r *repository) merge(branch *branch) error {
 		return err
 	}
 
-	log.Info(fmt.Sprintf("Branch %s merged successfully into the current branch.", program.RenderElementSelected(branch.Name().Short())))
+	log.Info(fmt.Sprintf("Branch %s merged successfully into the current branch.", ui.RenderElementSelected(branch.Name().Short())))
 
 	return nil
 }

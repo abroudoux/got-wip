@@ -3,7 +3,7 @@ package branch
 import (
 	"fmt"
 
-	"github.com/abroudoux/got/internal/program"
+	"github.com/abroudoux/got/internal/ui"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/log"
 )
@@ -81,14 +81,14 @@ func (menu branchChoice) View() string {
 	s += "Choose a branch:\n\n"
 
 	for i, branch := range menu.branches {
-		cursor := program.RenderCursor(menu.cursor == i)
+		cursor := ui.RenderCursor(menu.cursor == i)
 
 		if branch.Name().Short() == menu.head.Name().Short() {
 			branchName := "* " + branch.Name().Short()
-			s += fmt.Sprintf("%s %s\n", cursor, program.RenderCurrentLine(branchName, menu.cursor == i))
+			s += fmt.Sprintf("%s %s\n", cursor, ui.RenderCurrentLine(branchName, menu.cursor == i))
 		} else {
 			branchName := "  " + branch.Name().Short()
-			s += fmt.Sprintf("%s %s\n", cursor, program.RenderCurrentLine(branchName, menu.cursor == i))
+			s += fmt.Sprintf("%s %s\n", cursor, ui.RenderCurrentLine(branchName, menu.cursor == i))
 		}
 	}
 
