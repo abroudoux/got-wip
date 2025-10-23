@@ -22,13 +22,10 @@ func execAction(branchSelected *branch, action action, r *repository) error {
 		return copyBranchName(branchSelected)
 	case actionCheckout:
 		return r.checkout(branchSelected)
+	case actionMerge:
+		return r.merge(branchSelected)
 	case actionPull:
-		if !r.isHead(branchSelected) {
-			log.Warn("You need to pull the branch from the HEAD, move on it first.")
-			return nil
-		}
-
-		return r.pull()
+		return r.pull(branchSelected)
 	default:
 		log.Info("Exiting..")
 		return nil
@@ -161,7 +158,12 @@ func (r *repository) delete(branch *branch) error {
 	return nil
 }
 
-func (r *repository) pull() error {
+func (r *repository) pull(branch *branch) error {
+	if !r.isHead(branch) {
+		log.Warn("You need to pull the branch from the HEAD, move on it first.")
+		return nil
+	}
+
 	worktree, err := r.Worktree()
 	if err != nil {
 		return err
@@ -179,6 +181,32 @@ func (r *repository) pull() error {
 	}
 
 	log.Info("Branch pulled successfully.")
+
+	return nil
+}
+
+func (r *repository) merge(branch *branch) error {
+	if r.isHead(branch) {
+		log.Warn("You cannot merge the branch you're currently on, please checkout on another branch first.")
+		return nil
+	}
+
+	confirmMerge := program.Confirm(fmt.Sprintf("Are you sure you want to merge the branch %s into the current branch?", program.RenderElementSelected(branch.Name().Short())))
+
+	if !confirmMerge {
+		log.Info("Branch merge cancelled.")
+		return nil
+	}
+
+	opts := &git.MergeOptions{
+		Strategy: git.FastForwardMerge,
+	}
+	err := r.Merge(*branch, *opts)
+	if err != nil {
+		return err
+	}
+
+	log.Info(fmt.Sprintf("Branch %s merged successfully into the current branch.", program.RenderElementSelected(branch.Name().Short())))
 
 	return nil
 }
