@@ -26,6 +26,8 @@ func execAction(branchSelected *branch, action action, r *repository) error {
 		return r.merge(branchSelected)
 	case actionPull:
 		return r.pull(branchSelected)
+	case actionRename:
+		return r.rename(branchSelected)
 	default:
 		log.Info("Exiting..")
 		return nil
@@ -207,6 +209,17 @@ func (r *repository) merge(branch *branch) error {
 	}
 
 	log.Info(fmt.Sprintf("Branch %s merged successfully into the current branch.", program.RenderElementSelected(branch.Name().Short())))
+
+	return nil
+}
+
+func rename(branch *branch) error {
+	_, err := program.Input(fmt.Sprintf("Enter the new name for the branch:", branch.Name().Short()))
+	if err != nil {
+		return err
+	}
+
+	log.Info("Renaming branches is not yet implemented.")
 
 	return nil
 }

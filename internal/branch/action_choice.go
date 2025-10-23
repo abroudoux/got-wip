@@ -33,6 +33,7 @@ const (
 	actionMerge
 	actionNewBranch
 	actionCheckout
+	actionRename
 	actionPull
 	actionCopyName
 )
@@ -44,6 +45,7 @@ func (a action) String() string {
 		"Merge",
 		"New Branch",
 		"Checkout",
+		"Rename",
 		"Pull",
 		"Copy Name",
 	}[a]
@@ -56,6 +58,7 @@ func initialActionChoiceModel(branch *branch) actionChoice {
 		actionMerge,
 		actionNewBranch,
 		actionCheckout,
+		actionRename,
 		actionPull,
 		actionCopyName,
 	}
