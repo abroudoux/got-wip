@@ -28,7 +28,7 @@ func execAction(branchSelected *branch, action action, r *repository) error {
 	case actionPull:
 		return r.pull(branchSelected)
 	case actionRename:
-		return rename(branchSelected)
+		return r.rename(branchSelected)
 	default:
 		log.Info("Exiting..")
 		return nil
@@ -60,12 +60,11 @@ func (r *repository) checkout(branch *branch) error {
 		return err
 	}
 
-	options := &git.CheckoutOptions{
+	opts := &git.CheckoutOptions{
 		Branch: plumbing.ReferenceName(branch.Name()),
 		Keep:   true,
 	}
-
-	err = worktree.Checkout(options)
+	err = worktree.Checkout(opts)
 	if err != nil {
 		return err
 	}
@@ -214,13 +213,34 @@ func (r *repository) merge(branch *branch) error {
 	return nil
 }
 
-func rename(branch *branch) error {
-	_, err := program.Input(fmt.Sprintf("Enter the new name for the branch:", branch.Name().Short()))
+func (r *repository) rename(branch *branch) error {
+	newName, err := program.Input(fmt.Sprintf("Enter the new name for the branch: %s", branch.Name().Short()))
 	if err != nil {
 		return err
 	}
 
-	log.Info("Renaming branches is not yet implemented.")
+	if r.isBranchNameAlreadyExists(newName) {
+		log.Warn("Branch name already exists, please choose another name.")
+		return nil
+	}
+
+	newRefName := plumbing.NewBranchReferenceName(newName)
+	newRef := plumbing.NewHashReference(newRefName, branch.Hash())
+
+	err = r.Storer.SetReference(newRef)
+	if err != nil {
+		return fmt.Errorf("error creating new branch reference: %w", err)
+	}
+
+	err = r.Storer.RemoveReference(branch.Name())
+	if err != nil {
+		return fmt.Errorf("error removing old branch reference: %w", err)
+	}
+
+	log.Infof("Branch %s renamed successfully to %s.",
+		ui.RenderElementSelected(branch.Name().Short()),
+		ui.RenderElementSelected(newName),
+	)
 
 	return nil
 }
